@@ -133,12 +133,32 @@ std::vector<unsigned char> CryptoHelper::aesEncryptBlock(const std::vector<unsig
     if (key.size() != AES_BLOCK_SIZE || block.size() != AES_BLOCK_SIZE) {
         throw std::invalid_argument("Block and key size must be 16 bytes for AES-128.");
     }
-    std::vector<unsigned char> encryptedBlock = block;
+
+    // Step 1: Initialize state as a copy of the input block
+    std::vector<unsigned char> state = block;
+
+    // Step 2: Perform AddRoundKey (initial XOR with the key)
     for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
-        encryptedBlock[i] ^= key[i]; // Simplified XOR for demonstration
+        state[i] ^= key[i];
     }
-    return encryptedBlock;
+
+    // Step 3: Simplified AES rounds (only SubBytes and AddRoundKey)
+    for (size_t round = 0; round < AES_ROUNDS; ++round) {
+        // SubBytes: Substitute each byte using the S_BOX
+        for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
+            state[i] = S_BOX[state[i]];
+        }
+
+        // AddRoundKey: XOR with the key (for demonstration, reusing the same key)
+        for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
+            state[i] ^= key[i];
+        }
+    }
+
+    // Return the encrypted block
+    return state;
 }
+
 
 // Decrypt a single block using AES (simplified example)
 std::vector<unsigned char> CryptoHelper::aesDecryptBlock(const std::vector<unsigned char>& block,
@@ -146,12 +166,32 @@ std::vector<unsigned char> CryptoHelper::aesDecryptBlock(const std::vector<unsig
     if (key.size() != AES_BLOCK_SIZE || block.size() != AES_BLOCK_SIZE) {
         throw std::invalid_argument("Block and key size must be 16 bytes for AES-128.");
     }
-    std::vector<unsigned char> decryptedBlock = block;
-    for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
-        decryptedBlock[i] ^= key[i]; // Simplified XOR for demonstration
+
+    // Step 1: Initialize state as a copy of the input block
+    std::vector<unsigned char> state = block;
+
+    // Step 2: Perform simplified AES rounds in reverse order
+    for (size_t round = 0; round < AES_ROUNDS; ++round) {
+        // AddRoundKey: XOR with the key (for demonstration, reusing the same key)
+        for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
+            state[i] ^= key[i];
+        }
+
+        // InvSubBytes: Substitute each byte using the INV_S_BOX
+        for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
+            state[i] = INV_S_BOX[state[i]];
+        }
     }
-    return decryptedBlock;
+
+    // Step 3: Final AddRoundKey (reverse of initial XOR)
+    for (size_t i = 0; i < AES_BLOCK_SIZE; ++i) {
+        state[i] ^= key[i];
+    }
+
+    // Return the decrypted block
+    return state;
 }
+
 
 // AES-CBC Encryption
 std::vector<unsigned char> CryptoHelper::aesCbcEncrypt(const std::vector<unsigned char>& data,

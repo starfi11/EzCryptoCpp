@@ -80,10 +80,10 @@ void test() {
             printf("%02x ", byte);
         }
         std::cout << std::endl;
-        std::cout << "Encrypted Data: ";
+        /*std::cout << "Encrypted Data: ";
         for (unsigned char byte : encrypted) {
             std::cout << byte;
-        }
+        }*/
         
         std::cout << std::endl;
 
