@@ -207,11 +207,19 @@ std::vector<unsigned char> CryptoHelper::aesCbcEncrypt(const std::vector<unsigne
     std::vector<unsigned char> encryptedData;
     std::vector<unsigned char> prevBlock = iv;
 
-    for (size_t i = 0; i < data.size(); i += AES_BLOCK_SIZE) {
-        // Take current block (padding if necessary)
+    // Step 1: Add PKCS#7 padding
+    std::vector<unsigned char> paddedData = data;
+    size_t paddingLength = AES_BLOCK_SIZE - (data.size() % AES_BLOCK_SIZE);
+    for (size_t i = 0; i < paddingLength; ++i) {
+        paddedData.push_back(static_cast<unsigned char>(paddingLength));
+    }
+
+    // Step 2: Encrypt each block
+    for (size_t i = 0; i < paddedData.size(); i += AES_BLOCK_SIZE) {
+        // Take current block
         std::vector<unsigned char> block(AES_BLOCK_SIZE, 0);
-        for (size_t j = 0; j < AES_BLOCK_SIZE && i + j < data.size(); ++j) {
-            block[j] = data[i + j];
+        for (size_t j = 0; j < AES_BLOCK_SIZE && i + j < paddedData.size(); ++j) {
+            block[j] = paddedData[i + j];
         }
 
         // XOR with previous block (or IV for the first block)
@@ -227,6 +235,7 @@ std::vector<unsigned char> CryptoHelper::aesCbcEncrypt(const std::vector<unsigne
 
         // Update previous block
         prevBlock = encryptedBlock;
+
     }
 
     return encryptedData;
@@ -246,6 +255,7 @@ std::vector<unsigned char> CryptoHelper::aesCbcDecrypt(const std::vector<unsigne
     std::vector<unsigned char> decryptedData;
     std::vector<unsigned char> prevBlock = iv;
 
+    // Step 1: Decrypt each block
     for (size_t i = 0; i < encryptedData.size(); i += AES_BLOCK_SIZE) {
         // Take current encrypted block
         std::vector<unsigned char> encryptedBlock(encryptedData.begin() + i,
@@ -264,10 +274,29 @@ std::vector<unsigned char> CryptoHelper::aesCbcDecrypt(const std::vector<unsigne
 
         // Update previous block
         prevBlock = encryptedBlock;
+
+    }
+
+    // Step 2: Remove PKCS#7 padding
+    if (!decryptedData.empty()) {
+        unsigned char paddingValue = decryptedData.back();
+        if (paddingValue > 0 && paddingValue <= AES_BLOCK_SIZE) {
+            bool validPadding = true;
+            for (size_t i = 0; i < paddingValue; ++i) {
+                if (decryptedData[decryptedData.size() - 1 - i] != paddingValue) {
+                    validPadding = false;
+                    break;
+                }
+            }
+            if (validPadding) {
+                decryptedData.resize(decryptedData.size() - paddingValue);
+            }
+        }
     }
 
     return decryptedData;
 }
+
 
 // Helper: Print Hex
 void CryptoHelper::printHex(const std::vector<unsigned char>& data) {

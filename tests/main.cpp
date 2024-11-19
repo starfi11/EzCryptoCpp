@@ -12,7 +12,7 @@ int main() {
     Client client(server.getPublicKey(), server.getModulus());
 
     // Original Message
-    std::string message = "Hello, secure world!1234567890123456789012345678901";
+    std::string message = "Hello, secure world!123456789012345678901234567899";
     std::cout << "[Main] Original Message: " << message << "\n";
 
     // Communication variables
