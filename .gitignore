@@ -1,0 +1,8 @@
+# 忽略 Visual Studio 自动生成的文件
+.vs/
+build/
+*.suo
+*.VC.db
+Debug/
+Release/
+CMakeSettings.json
